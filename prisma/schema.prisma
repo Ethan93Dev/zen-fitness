@@ -38,6 +38,7 @@ model Profile {
   firstname   String
   lastname    String
   address     String
+  userId      Int      @unique
   city        String
   state       String
   phone       Int
