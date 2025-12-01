@@ -1,0 +1,192 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum USERROLE {
+  NOTMEMBER
+  MEMBER
+  TRAINER
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  username     String
+  email        String         @unique
+  password     String
+  isOnline     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  profile      Profile?       @relation(fields: [profileId], references: [id])
+  visits       Visits[]
+  profileId    Int?
+  userWorkouts UserWorkout[]
+  userTrainers UserTrainers[]
+}
+
+model Profile {
+  id          Int      @id @default(autoincrement())
+  firstname   String
+  lastname    String
+  address     String
+  city        String
+  state       String
+  phone       Int
+  memberSince DateTime @default(now())
+  userrole    USERROLE @default(NOTMEMBER)
+  users       User[]
+}
+
+model Visits {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  checkin      DateTime
+  checkout     DateTime?
+  user         User          @relation(fields: [userId], references: [id])
+  userWorkouts UserWorkout[] @relation("WorkoutToUserWorkout")
+}
+
+model UserWorkout {
+  id                Int                 @id @default(autoincrement())
+  userId            Int
+  editedAt          DateTime            @default(now())
+  workout           String
+  user              User                @relation(fields: [userId], references: [id])
+  favoritedExercise FavoritedExercise[] @relation("UserWorkoutFavoritedExercises")
+  visits            Visits[]            @relation("WorkoutToUserWorkout")
+}
+
+model FavoritedExercise {
+  id               Int           @id @default(autoincrement())
+  name             String        @unique
+  equipment        String
+  gifUrl           String
+  target           String
+  bodyPart         String
+  instructions     String[]
+  secondaryMuscles String[]
+  userWorkouts     UserWorkout[] @relation("UserWorkoutFavoritedExercises")
+}
+
+model Employee {
+  id        Int                 @id @default(autoincrement())
+  username  String              @unique
+  email     String              @unique
+  password  String
+  createdAt DateTime            @default(now())
+  editedAt  DateTime
+  roles     EmployeeAuthority[]
+  trainer   UserTrainers[]
+}
+
+model Role {
+  id          Int                 @id @default(autoincrement())
+  name        RoleType            @unique
+  createdAt   DateTime            @default(now())
+  editedAt    DateTime            @default(now())
+  employees   EmployeeAuthority[]
+  authorities EmployeeRole[]
+}
+
+model EmployeeAuthority {
+  employeeId  Int
+  authorityId Int
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  role     Role     @relation(fields: [authorityId], references: [id])
+
+  @@id([employeeId, authorityId])
+}
+
+enum RoleType {
+  ADMIN
+  TRAINER
+  STAFF
+  MANAGER
+}
+
+model Authority {
+  id        Int            @id @default(autoincrement())
+  authority AuthorityType  @unique
+  createdAt DateTime       @default(now())
+  editedAt  DateTime
+  roles     EmployeeRole[]
+}
+
+model EmployeeRole {
+  roleId      Int
+  authorityId Int
+  role        Role      @relation(fields: [roleId], references: [id])
+  authority   Authority @relation(fields: [authorityId], references: [id])
+
+  @@id([roleId, authorityId])
+}
+
+enum AuthorityType {
+  CREATEUSER
+  DELETEUSER
+  BANUSER
+  CREATEADMIN
+}
+
+model Trainer {
+  id            Int            @id @default(autoincrement())
+  employeeId    Int
+  fullName      String         @unique
+  specialzation String?
+  bio           String         @default("")
+  isActive      Boolean        @default(false)
+  ratings       Int            @default(0)
+  userTrainers  UserTrainers[]
+  sessions      Session[]      @relation("TrainerSessions")
+  reviews       Review[]       @relation("TrainerReviews")
+  schedules     Schedule[]     @relation("TrainerSchedules")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  startTime DateTime
+  endTime   DateTime
+  notes     String // Track what users might need more work on
+  trainerId Int // Foreign key to Trainer
+  trainer   Trainer  @relation("TrainerSessions", fields: [trainerId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comments  String
+  createdAt DateTime
+  trainerId Int // Foreign key to Trainer
+  trainer   Trainer  @relation("TrainerReviews", fields: [trainerId], references: [id])
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  dayOfWeek Int
+  startTime DateTime
+  endTime   DateTime
+  trainerId Int // Foreign key to Trainer
+  trainer   Trainer  @relation("TrainerSchedules", fields: [trainerId], references: [id])
+}
+
+model UserTrainers {
+  id        Int @id @default(autoincrement())
+  userId    Int // Foreign key to User
+  trainerId Int // Foreign key to Trainer
+
+  user     User       @relation(fields: [userId], references: [id])
+  trainer  Trainer    @relation(fields: [trainerId], references: [id])
+  Employee Employee[]
+
+  @@unique([userId, trainerId]) // Ensures that a User can be linked to a Trainer only once
+}
