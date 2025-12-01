@@ -32,6 +32,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    const existingProfile = await prisma.profile.findUnique({
+      where: { userId },
+    });
+    if (existingProfile) {
+      return NextResponse.json(
+        { message: "Profile already exists for this user" },
+        { status: 409 }
+      );
+    }
+
     const createProfile = await prisma.profile.create({
       data: {
         firstname,
@@ -40,6 +50,7 @@ export async function POST(req: NextRequest) {
         city,
         state,
         phone,
+        userId,
         userrole: "NOTMEMBER", // confirm this field and value exist in your Prisma schema
       },
     });
