@@ -21,3 +21,21 @@ export type WorkoutPlanInput = {
   time?: Date | string;
   checkout: Date | string;
 };
+export type FavoritedExerciseType = {
+  id: number;
+  name: string;
+  equipment: string;
+  gifUrl: string;
+  instructions: string[];
+  secondaryMuscles: string[];
+  target: string;
+  bodyPart: string;
+};
+export type updateBodyType = {
+  name: string;
+  equipment: string;
+  gifUrl: string;
+  instructions: string[];
+  secondaryMuscles: string[];
+  target: string;
+};
